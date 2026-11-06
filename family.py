@@ -16,7 +16,7 @@ SITES = [
     ("chd-housing", "chbonline.in", "Chandigarh Housing Board", "housing"),
     ("chn-gcc", "chennaicorporation.gov.in", "Greater Chennai Corporation", "chennai"),
     ("chn-cmda", "www.cmdachennai.gov.in", "Chennai Metropolitan Development Authority", "chennai"),
-    ("chn-water", "chennaimetrowater.tn.gov.in", "Chennai Metro Water", "water"),
+    ("chn-water", "cmwssb.tn.gov.in", "Chennai Metro Water", "water"),
     ("pun-pmc", "www.pmc.gov.in", "Pune Municipal Corporation", "pune"),
     ("pun-open", "opendata.pmc.gov.in", "Pune open data portal", "pune"),
     ("pun-pcmc", "www.pcmcindia.gov.in", "Pimpri Chinchwad Municipal Corporation", "pcmc"),
