@@ -23,7 +23,7 @@ SITES = [
     ("pun-pmrda", "www.pmrda.gov.in", "Pune Metropolitan Region Development Authority", "pmrda"),
     ("mum-bmc", "portal.mcgm.gov.in", "Brihanmumbai Municipal Corporation", "municipal"),
     ("mum-mmrda", "mmrda.maharashtra.gov.in", "Mumbai Metropolitan Region Development Authority", "mmrda"),
-    ("mum-msrdc", "www.msrdc.in", "Maharashtra State Road Development Corporation", "road"),
+    ("mum-msrdc", "www.msrdc.org", "Maharashtra State Road Development Corporation", "road"),
     ("knp-kmc", "kmc.up.nic.in", "Kanpur Nagar Nigam", "kanpur"),
     ("knp-kda", "kdaonline.in", "Kanpur Development Authority", "kanpur"),
 ]
