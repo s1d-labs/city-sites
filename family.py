@@ -1,27 +1,47 @@
-"""What this family scrapes. Change this file first.
+"""What this family scrapes: every public page and document on the websites of city agencies.
 
-FAMILY must equal the repo name (s1d-labs/<FAMILY>) and the family the hub owner added on scrape.s1d.me/runners.
-Each project is one queue of work on one site; `target` is the host it hits (the hub caps workers per target).
+One project per site, on the pool's India servers (geo="IN"). The queue starts at the home page and grows: crawl.py adds each new link it
+finds on the same site. Add a city by adding its rows to SITES. The first word of the slug is the city.
 """
 import json
 from pathlib import Path
 
 FAMILY = json.loads((Path(__file__).parent / "scrape.json").read_text())["family"]
 
-PROJECTS = [
-    {
-        "name": f"{FAMILY}-books",              # project names: 2-64 chars of a-z 0-9 - _, start them with the family name
-        "title": "Books to Scrape catalogue",
-        "task": "crawl",                         # a task from scrape.json
-        "target": "books.toscrape.com",
-        "env": {"SITE": "https://books.toscrape.com"},
-        "probe": f"{FAMILY}:books.toscrape.com",
-        "unit_label": "page", "record_label": "book",
-        # the queue: one item per catalogue page; `expected` (records per item) gives progress and ETAs on the dashboard
-        "items": [{"key": f"page-{n}", "payload": {"url": f"https://books.toscrape.com/catalogue/page-{n}.html", "expected": 20}}
-                  for n in range(1, 51)],
-    },
+# slug, host, title, text that the home page always holds (for the health check)
+SITES = [
+    ("chd-mc", "mcchandigarh.gov.in", "Municipal Corporation Chandigarh", "chandigarh"),
+    ("chd-admin", "chandigarh.gov.in", "Chandigarh Administration", "chandigarh"),
+    ("chd-engineering", "chdengineering.gov.in", "Chandigarh Engineering Department", "engineering"),
+    ("chd-housing", "chbonline.in", "Chandigarh Housing Board", "housing"),
+    ("chn-gcc", "chennaicorporation.gov.in", "Greater Chennai Corporation", "chennai"),
+    ("chn-cmda", "www.cmdachennai.gov.in", "Chennai Metropolitan Development Authority", "chennai"),
+    ("chn-water", "chennaimetrowater.tn.gov.in", "Chennai Metro Water", "water"),
+    ("pun-pmc", "www.pmc.gov.in", "Pune Municipal Corporation", "pune"),
+    ("pun-open", "opendata.pmc.gov.in", "Pune open data portal", "pune"),
+    ("pun-pcmc", "www.pcmcindia.gov.in", "Pimpri Chinchwad Municipal Corporation", "pcmc"),
+    ("pun-pmrda", "www.pmrda.gov.in", "Pune Metropolitan Region Development Authority", "pmrda"),
+    ("mum-bmc", "portal.mcgm.gov.in", "Brihanmumbai Municipal Corporation", "municipal"),
+    ("mum-mmrda", "mmrda.maharashtra.gov.in", "Mumbai Metropolitan Region Development Authority", "mmrda"),
+    ("mum-msrdc", "www.msrdc.in", "Maharashtra State Road Development Corporation", "road"),
+    ("knp-kmc", "kmc.up.nic.in", "Kanpur Nagar Nigam", "kanpur"),
+    ("knp-kda", "kdaonline.in", "Kanpur Development Authority", "kanpur"),
 ]
 
-# health checks the hub runs every minute; work for a project holds while its probe fails
-PROBES = [{"name": f"{FAMILY}:books.toscrape.com", "url": "https://books.toscrape.com/", "expect": "All products"}]
+PROJECTS = [
+    {
+        "name": f"{FAMILY}-{slug}",
+        "title": title,
+        "task": "crawl",
+        "target": host,
+        "env": {"SITE": host},
+        "probe": f"{FAMILY}:{host}",
+        "unit_label": "url", "record_label": "page or document",
+        "items": [{"key": "start", "payload": {"url": f"https://{host}/", "depth": 0}}],
+        "workers": 2,
+        "delay_ms": 1000,
+    }
+    for slug, host, title, _ in SITES
+]
+
+PROBES = [{"name": f"{FAMILY}:{host}", "url": f"https://{host}/", "expect": text} for _, host, _, text in SITES]
