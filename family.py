@@ -25,7 +25,7 @@ SITES = [
     ("mum-mmrda", "mmrda.maharashtra.gov.in", "Mumbai Metropolitan Region Development Authority", "mmrda"),
     ("mum-msrdc", "www.msrdc.org", "Maharashtra State Road Development Corporation", "road"),
     ("knp-kmc", "kmc.up.nic.in", "Kanpur Nagar Nigam", "kanpur"),
-    ("knp-kda", "kdaonline.in", "Kanpur Development Authority", "kanpur"),
+    ("knp-kda", "www.kdaindia.co.in", "Kanpur Development Authority", "kanpur"),
 ]
 
 PROJECTS = [
