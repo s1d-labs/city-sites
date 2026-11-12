@@ -1,6 +1,13 @@
 {
   "family": "city-sites",
-  "about": "City agency websites: every public page and document, one project per site, for the city road ledgers.",
-  "setup": ["pip install -r requirements.txt"],
-  "tasks": {"crawl": ["python", "crawl.py"]}
+  "about": "City agency websites (Chandigarh, Chennai, Pune, Mumbai, Kanpur, Delhi): every public page and document, one project per site, for the city road ledgers.",
+  "setup": [
+    "pip install -r requirements.txt"
+  ],
+  "tasks": {
+    "crawl": [
+      "python",
+      "crawl.py"
+    ]
+  }
 }
