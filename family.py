@@ -1,6 +1,7 @@
 """What this family scrapes: every public page and document on the websites of city agencies.
 
-One project per site, on the pool's India servers (geo="IN"). The queue starts at the home page and grows: crawl.py adds each new link it
+One project per site, on GitHub runners: direct, or through the hub's Mumbai proxies (proxy="IN") for the hosts in PROXY_IN that
+refuse GitHub's runners. The queue starts at the home page and grows: crawl.py adds each new link it
 finds on the same site. Add a city by adding its rows to SITES. The first word of the slug is the city. Sites with a login, a captcha
 or a search form behind them are crawled only as far as plain links go.
 """
@@ -57,6 +58,12 @@ DELHI = [
     ("uttipec", "uttipec.org.in", "UTTIPEC, DDA road design body", "uttipec"),
     ("dsiidc", "dsiidc.delhi.gov.in", "Delhi State Industrial and Infrastructure Development Corporation", "dsiidc"),
 ]
+# Hosts that refuse GitHub's runners (owner's front-page test, 2026-11-12): their work goes through the hub's Mumbai proxies. Every other
+# host answers GitHub's runners directly. The India pool servers (geo="IN") are not used since 2026-11-12.
+PROXY_IN = {"mcchandigarh.gov.in", "chdengineering.gov.in", "www.cmdachennai.gov.in", "cmwssb.tn.gov.in", "www.pcmcindia.gov.in",
+            "ceodelhi.gov.in", "delhipolice.gov.in"}
+PROXY_ONLY = {"www.pcmcindia.gov.in": ["91.124.42.", "95.134.119."]}     # pcmcindia answers only these proxy ranges (in-06/07, in-08..10)
+
 # the MLA fund orders (MLALAD) of Delhi Urban Development, listed by year on pages that a plain link crawl does not reach
 UDD_ORDERS = [u for u in (Path(__file__).parent / "udd_orders.txt").read_text().split("\n") if u]
 
@@ -77,6 +84,8 @@ def _project(prefix, slug, host, title):
         "unit_label": "url", "record_label": "page or document",
         "items": items,
         "workers": 2,
+        "proxy": "IN" if host in PROXY_IN else "",
+        "proxy_only": PROXY_ONLY.get(host, []),
         "delay_ms": 2000 if delhi and slug == "udd" else 1000,
     }
 
