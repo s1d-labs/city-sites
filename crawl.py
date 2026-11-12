@@ -4,17 +4,13 @@ import collections
 import gzip
 import hashlib
 import os
-import signal
 import sys
-import tempfile
 import time
-from pathlib import Path
 from urllib.parse import urlsplit
 
-import certifi
 import requests
 
-from scrape_hub_client import HubClient, seed_queue
+from scrape_hub_client import HubClient, ca_bundle, count_request, seed_queue, stop_flag
 
 from sitecrawl import clean, key_of, kind, links, read, same_site
 
@@ -26,12 +22,7 @@ MAX_BYTES = 200 * 1024 * 1024
 TEXT_CAP = 150_000
 PER_PATH = 2000             # query-string variants of one path: a search or list page must not fill the queue
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; s1d-labs public records crawl; +https://labs.s1d.me)"}
-stop = False
-
-
-def on_signal(*_):
-    global stop
-    stop = True
+stop = stop_flag(install=False)     # set on SIGINT / SIGTERM once main() installs the handlers
 
 
 def fetch(hub, s, url):
@@ -46,16 +37,11 @@ def fetch(hub, s, url):
                 r.close()
                 return None, None
     except requests.RequestException as e:
-        hub.metric("http_error")
-        hub.error()
+        count_request(hub, None)                                # http_error
         hub.failure("no-answer", url, type(e).__name__)
         return None, None
-    hub.metric("n_http")
-    hub.metric("t_http_s", time.time() - t)
+    count_request(hub, r.status_code, time.time() - t)          # n_http, t_http_s, http_<code>, block on 403/429/503
     if r.status_code != 200:
-        hub.metric(f"http_{r.status_code}")
-        if r.status_code in (403, 429, 503):
-            hub.block()
         if r.status_code in (404, 410):
             return "gone", None
         return None, None
@@ -82,24 +68,12 @@ def ext_of(url, ctype):
     return {"application/pdf": "pdf", "text/csv": "csv", "application/zip": "zip"}.get(ctype, "bin")
 
 
-def trust():
-    """certifi plus the public intermediates in certs/ that some sites fail to send. Verification stays on."""
-    extra = sorted(Path(__file__).parent.glob("certs/*.pem"))
-    if not extra:
-        return True
-    with tempfile.NamedTemporaryFile("wb", suffix=".pem", delete=False) as f:
-        for p in [Path(certifi.where())] + extra:
-            f.write(p.read_bytes() + b"\n")
-    return f.name
-
-
 def main():
     hub = HubClient(PROJECT, job_index=int(os.environ.get("SCRAPE_JOB_INDEX", 0)), total_jobs=int(os.environ.get("SCRAPE_TOTAL_JOBS", 1)))
     s = requests.Session()
-    s.verify = trust()
+    s.verify = ca_bundle()      # certifi + public intermediates some sites fail to send (from scrape-hub-client). Verification stays on.
     s.headers.update(HEADERS)
-    signal.signal(signal.SIGINT, on_signal)
-    signal.signal(signal.SIGTERM, on_signal)
+    stop_flag()
     paths = collections.Counter()
     seen, fresh = set(), []
 
@@ -147,7 +121,7 @@ def main():
         hub.complete([item["key"]], "done", fetched=1)
 
     try:
-        while time.time() < DEADLINE and not stop:
+        while time.time() < DEADLINE and not stop.is_set():
             if hub.settings.get("paused"):
                 time.sleep(30)
                 continue
@@ -163,7 +137,7 @@ def main():
                 hub.complete([item["key"]], "failed", error=type(e).__name__)
             time.sleep(max(.5, hub.settings.get("delay_ms", 0) / 1000))
         send()
-        hub.close("finished" if not stop else "failed", "" if not stop else "stopped by signal")
+        hub.close("finished" if not stop.is_set() else "failed", "" if not stop.is_set() else "stopped by signal")
     except Exception as e:
         send()
         hub.close("failed", str(e)[:200])
